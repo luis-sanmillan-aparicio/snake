@@ -15,6 +15,8 @@
       height: 100vh;
       font-family: monospace;
       color: white;
+      touch-action: none;
+      user-select: none;
     }
     #score { font-size: 24px; margin-bottom: 16px; }
     canvas {
@@ -25,13 +27,15 @@
       margin-top: 16px;
       font-size: 16px;
       color: #aaa;
+      text-align: center;
+      padding: 0 16px;
     }
   </style>
 </head>
 <body>
   <div id="score">Score: 0</div>
   <canvas id="canvas" width="400" height="400"></canvas>
-  <div id="message">Pulsa una tecla de dirección para empezar</div>
+  <div id="message">Desliza o pulsa una tecla para empezar</div>
 
   <script>
     const canvas = document.getElementById('canvas');
@@ -43,6 +47,7 @@
     const CELL = canvas.width / GRID;
 
     let snake, dir, next, food, score, loop, started;
+    let touchStartX, touchStartY;
 
     function init() {
       snake = [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}];
@@ -51,9 +56,10 @@
       score = 0;
       started = false;
       scoreEl.textContent = 'Score: 0';
-      messageEl.textContent = 'Pulsa una tecla de dirección para empezar';
+      messageEl.textContent = 'Desliza o pulsa una tecla para empezar';
       placeFood();
       clearInterval(loop);
+      loop = null;
       draw();
     }
 
@@ -84,7 +90,8 @@
         snake.some(s => s.x === head.x && s.y === head.y)
       ) {
         clearInterval(loop);
-        messageEl.textContent = `Game Over — Score: ${score}. Pulsa una tecla para reiniciar`;
+        loop = null;
+        messageEl.textContent = `Game Over — Score: ${score}. Desliza para reiniciar`;
         started = false;
         return;
       }
@@ -105,7 +112,7 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = '#00cc44';
-      snake.forEach((s, i) => {
+      snake.forEach(s => {
         ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
       });
 
@@ -113,6 +120,14 @@
       ctx.fillRect(food.x * CELL + 1, food.y * CELL + 1, CELL - 2, CELL - 2);
     }
 
+    function handleDirection(d) {
+      if (!d) return;
+      if (d.x === -dir.x && d.y === -dir.y) return;
+      next = d;
+      if (!started) start();
+    }
+
+    // Teclado
     document.addEventListener('keydown', e => {
       const keys = {
         ArrowUp:    {x: 0,  y: -1},
@@ -120,13 +135,36 @@
         ArrowLeft:  {x: -1, y: 0},
         ArrowRight: {x: 1,  y: 0}
       };
-      const d = keys[e.key];
-      if (!d) return;
-      if (d.x === -dir.x && d.y === -dir.y) return;
-      next = d;
-      if (!started) start();
-      else if (!loop) init();
+      handleDirection(keys[e.key]);
     });
+
+    // Swipe táctil
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const minSwipe = 20;
+
+      if (Math.abs(dx) < minSwipe && Math.abs(dy) < minSwipe) return;
+
+      let d;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        d = dx > 0 ? {x: 1, y: 0} : {x: -1, y: 0};
+      } else {
+        d = dy > 0 ? {x: 0, y: 1} : {x: 0, y: -1};
+      }
+
+      if (!started && loop === null) {
+        init();
+        setTimeout(() => handleDirection(d), 50);
+      } else {
+        handleDirection(d);
+      }
+    }, { passive: true });
 
     init();
   </script>
