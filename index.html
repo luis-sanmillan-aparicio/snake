@@ -29,19 +29,38 @@
       color: #aaa;
       text-align: center;
       padding: 0 16px;
+      min-height: 24px;
     }
+    #btn-start {
+      margin-top: 14px;
+      padding: 10px 32px;
+      font-family: monospace;
+      font-size: 18px;
+      background: #00cc44;
+      color: #1a1a1a;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: background 0.15s;
+    }
+    #btn-start:hover { background: #00ff55; }
+    #btn-start.hidden { display: none; }
   </style>
 </head>
 <body>
   <div id="score">Score: 0</div>
   <canvas id="canvas" width="400" height="400"></canvas>
-  <div id="message">Desliza o pulsa una tecla para empezar</div>
+  <div id="message"></div>
+  <button id="btn-start">EMPEZAR</button>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('score');
     const messageEl = document.getElementById('message');
+    const btnStart = document.getElementById('btn-start');
 
     const GRID = 20;
     const CELL = canvas.width / GRID;
@@ -56,7 +75,7 @@
       score = 0;
       started = false;
       scoreEl.textContent = 'Score: 0';
-      messageEl.textContent = 'Desliza o pulsa una tecla para empezar';
+      messageEl.textContent = '';
       placeFood();
       clearInterval(loop);
       loop = null;
@@ -76,6 +95,7 @@
 
     function start() {
       started = true;
+      btnStart.classList.add('hidden');
       messageEl.textContent = '';
       loop = setInterval(tick, 150);
     }
@@ -91,8 +111,10 @@
       ) {
         clearInterval(loop);
         loop = null;
-        messageEl.textContent = `Game Over — Score: ${score}. Desliza para reiniciar`;
         started = false;
+        messageEl.textContent = `Game Over — Puntuación: ${score}`;
+        btnStart.textContent = 'REINICIAR';
+        btnStart.classList.remove('hidden');
         return;
       }
 
@@ -127,7 +149,13 @@
       if (!started) start();
     }
 
-    // Teclado
+    // Botón empezar / reiniciar
+    btnStart.addEventListener('click', () => {
+      init();
+      start();
+    });
+
+    // Teclado — ahora también resetea correctamente si el juego acabó
     document.addEventListener('keydown', e => {
       const keys = {
         ArrowUp:    {x: 0,  y: -1},
@@ -135,7 +163,15 @@
         ArrowLeft:  {x: -1, y: 0},
         ArrowRight: {x: 1,  y: 0}
       };
-      handleDirection(keys[e.key]);
+      const d = keys[e.key];
+      if (!d) return;
+
+      if (!started && loop === null) {
+        init();
+        setTimeout(() => handleDirection(d), 50);
+      } else {
+        handleDirection(d);
+      }
     });
 
     // Swipe táctil
