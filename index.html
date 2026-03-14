@@ -51,7 +51,7 @@
   <canvas id="canvas" width="400" height="400"></canvas>
   <div id="message"></div>
   <div id="buttons">
-    <button id="btn-normal" class="btn">CLASICO</button>
+    <button id="btn-normal" class="btn">EMPEZAR</button>
     <button id="btn-bombs"  class="btn">💣 BOMBAS</button>
   </div>
 
@@ -329,8 +329,8 @@
         ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0}
       };
       const d=map[e.key]; if(!d) return;
-      if (!started&&loop===null) { init(bombMode); setTimeout(()=>handleDir(d),50); }
-      else handleDir(d);
+      if (!started) return;
+      handleDir(d);
     });
 
     document.addEventListener('touchstart', e=>{
@@ -344,8 +344,8 @@
       const d=Math.abs(dx)>Math.abs(dy)
         ? (dx>0?{x:1,y:0}:{x:-1,y:0})
         : (dy>0?{x:0,y:1}:{x:0,y:-1});
-      if (!started&&loop===null){init(bombMode);setTimeout(()=>handleDir(d),50);}
-      else handleDir(d);
+      if (!started) return;
+      handleDir(d);
     },{passive:true});
 
     init(false);
